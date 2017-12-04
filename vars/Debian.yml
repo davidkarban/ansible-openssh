@@ -1,0 +1,5 @@
+openssh_service: "ssh"
+
+openssh_pkgs:
+  - "openssh-server"
+
