@@ -1,6 +1,6 @@
 ---
 openssh_port: 22
 
-# only sertup if you want override default all addressess and interfaces
-# shloud be list of ip addresses
-openssh_listen_addresses: false
+# only setup if you want override default all addresses and interfaces
+# should be list of ip addresses
+openssh_listen_addresses: []
