@@ -3,23 +3,10 @@
   include_vars: "{{ ansible_os_family }}.yml"
 
 - name: Install the packages in Redhat derivates
-  yum:
+  package:
     name: "{{ item }}"
     state: present
   with_items: '{{ openssh_pkgs }}'
-  when: ansible_os_family == 'RedHat'
-
-- name: Install the mysql packages in Debian derivates
-  apt:
-    name: "{{ item }}"
-    state: present
-    update_cache: yes
-    cache_valid_time: 600
-  with_items: '{{ openssh_pkgs }}'
-  environment:
-    # prevent mysql from autostart after installation
-    RUNLEVEL: 1
-  when: ansible_os_family == 'Debian'
 
 - name: Load ssh configuration
   template:
@@ -28,4 +15,3 @@
     backup: yes
   notify: reload ssh
 
-  
