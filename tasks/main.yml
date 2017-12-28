@@ -2,15 +2,25 @@
 - name: Load the OS specific variables
   include_vars: "{{ ansible_os_family }}.yml"
 
-- name: Install the packages in Redhat derivates
+- name: Install the openssh package
   package:
     name: "{{ item }}"
     state: present
   with_items: '{{ openssh_pkgs }}'
 
+- name: Detect openssh version
+  shell: ssh -V 2>&1 | sed -e "s/^OpenSSH_\([0-9]*\.[0-9]*\).*/\1/g"
+  register: openssh_version_r
+  check_mode: false
+  changed_when: false
+
+- set_fact:
+    openssh_version: "{{ openssh_version_r.stdout|float }}"
+  changed_when: false
+
 - name: Load ssh configuration
   template:
-    src: sshd_config.{{ ansible_os_family }}.j2
+    src: sshd_config.j2
     dest: /etc/ssh/sshd_config
     backup: yes
   notify: reload ssh
