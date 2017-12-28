@@ -22,6 +22,11 @@ Example Playbook
       roles:
          - davidkarban.openssh
 
+TODO
+----------------
+* Add moduli cleanup/regeneration.
+* Add allowed users/groups by AllowUsers or AllowGroup 
+
 License
 -------
 
