@@ -1,10 +1,7 @@
 # {{ ansible_managed }}
-#      $OpenBSD: sshd_config,v 1.100 2016/08/15 12:32:04 naddy Exp $
 
 # This is the sshd server system-wide configuration file.  See
 # sshd_config(5) for more information.
-
-# This sshd was compiled with PATH=/usr/local/bin:/usr/bin
 
 # The strategy used for options in the default sshd_config shipped with
 # OpenSSH is to specify options with their default value where
@@ -17,7 +14,7 @@
 #
 Port {{ openssh_port }}
 #AddressFamily any
-{% if openssh_listen_addresses %}{% for address in  openssh_listen_addresses %}
+{% if openssh_listen_addresses %}{% for address in openssh_listen_addresses %}
 ListenAddress {{ address }}
 {% endfor %}{% else %}
 #ListenAddress 0.0.0.0
@@ -25,13 +22,49 @@ ListenAddress {{ address }}
 {% endif %}
 
 # The default requires explicit activation of protocol 1
-#Protocol 2
+Protocol 2
 
-# HostKeys for protocol version 2
-HostKey /etc/ssh/ssh_host_rsa_key
-#HostKey /etc/ssh/ssh_host_dsa_key
-{% if ansible_distribution_major_version|int >= 7%}HostKey /etc/ssh/ssh_host_ecdsa_key
+# Supported HostKey algorithms by order of preference.
+{% if openssh_version|float >= 6.6 %}
 HostKey /etc/ssh/ssh_host_ed25519_key
+{% endif %}
+HostKey /etc/ssh/ssh_host_rsa_key
+{% if openssh_version|float < 5.3 %}
+
+Ciphers aes256-ctr,aes192-ctr,aes128-ctr
+MACs hmac-ripemd160
+{% elif openssh_version|float >= 5.3 and openssh_version|float < 6.0 %}
+
+Ciphers aes256-ctr,aes192-ctr,aes128-ctr
+KexAlgorithms diffie-hellman-group-exchange-sha256
+MACs hmac-sha2-512,hmac-sha2-256,hmac-ripemd160
+
+{% elif openssh_version|float >= 6.0 and openssh_version|float < 6.4 %}
+Ciphers aes256-ctr,aes192-ctr,aes128-ctr
+KexAlgorithms diffie-hellman-group-exchange-sha256
+MACs hmac-sha2-512,hmac-sha2-256,hmac-ripemd160
+
+{% elif openssh_version|float >= 6.4 and openssh_version|float < 6.6 %}
+Ciphers aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+KexAlgorithms diffie-hellman-group-exchange-sha256
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-ripemd160-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,hmac-ripemd160,umac-128@openssh.com
+
+{% elif openssh_version|float >= 6.6 and openssh_version|float < 6.7 %}
+Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+KexAlgorithms diffie-hellman-group-exchange-sha256
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-ripemd160-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,hmac-ripemd160,umac-128@openssh.com
+
+{% elif openssh_version|float >= 6.7 %}
+Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+KexAlgorithms curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-ripemd160-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,hmac-ripemd160,umac-128@openssh.com
+{% endif %}
+
+# Password based logins are disabled - only public key based logins are allowed.
+{% if openssh_version|float >= 6.7%}
+AuthenticationMethods publickey
+{% elif openssh_version|float != 6.0 %}
+RequiredAuthentications2 publickey
 {% endif %}
 
 # Ciphers and keying
@@ -40,7 +73,9 @@ HostKey /etc/ssh/ssh_host_ed25519_key
 # Logging
 #SyslogFacility AUTH
 SyslogFacility AUTHPRIV
-#LogLevel INFO
+
+# LogLevel VERBOSE logs user's key fingerprint on login. Needed to have a clear audit track of which key was using to log in.
+LogLevel VERBOSE
 
 # Authentication:
 
@@ -50,12 +85,11 @@ PermitRootLogin without-password
 #MaxAuthTries 6
 #MaxSessions 10
 
-#PubkeyAuthentication yes
+PubkeyAuthentication yes
 
 # The default is to check both .ssh/authorized_keys and .ssh/authorized_keys2
 # but this is overridden so installations will only check .ssh/authorized_keys
 AuthorizedKeysFile     .ssh/authorized_keys
-
 
 #AuthorizedPrincipalsFile none
 
@@ -71,9 +105,8 @@ AuthorizedKeysFile     .ssh/authorized_keys
 #IgnoreRhosts yes
 
 # To disable tunneled clear text passwords, change to no here!
-#PasswordAuthentication yes
-#PermitEmptyPasswords no
 PasswordAuthentication no
+#PermitEmptyPasswords no
 
 # Change to no to disable s/key passwords
 #ChallengeResponseAuthentication yes
@@ -117,7 +150,6 @@ X11Forwarding no
 #PrintLastLog yes
 #TCPKeepAlive yes
 #UseLogin no
-{% if ansible_distribution_major_version|int == 6 %}#UsePrivilegeSeparation yes{% else %}UsePrivilegeSeparation sandbox		# Default for new installations.{% endif %}
 
 #PermitUserEnvironment no
 #Compression delayed
@@ -140,8 +172,14 @@ AcceptEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT
 AcceptEnv LC_IDENTIFICATION LC_ALL LANGUAGE
 AcceptEnv XMODIFIERS
 
-# override default of no subsystems
-Subsystem      sftp    /usr/libexec/openssh/sftp-server
+# Log sftp level file access (read/write/etc.) that would not be easily logged otherwise.
+Subsystem      sftp    {{ __openssh_sftp_path }} -f AUTHPRIV -l INFO
+
+{% if openssh_version|float >= 6.7 %}
+# Use kernel sandbox mechanisms where possible in unprivileged processes
+# Systrace on OpenBSD, Seccomp on Linux, seatbelt on MacOSX/Darwin, rlimit elsewhere.
+UsePrivilegeSeparation sandbox
+{% endif %}
 
 # Example of overriding settings on a per-user basis
 #Match User anoncvs
