@@ -2,3 +2,5 @@ openssh_service: "sshd"
 
 openssh_pkgs:
   - "openssh-server"
+
+__openssh_sftp_path: "/usr/libexec/openssh/sftp-server"

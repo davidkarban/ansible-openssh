@@ -3,3 +3,4 @@ openssh_service: "ssh"
 openssh_pkgs:
   - "openssh-server"
 
+__openssh_sftp_path: "/usr/lib/openssh/sftp-server"
