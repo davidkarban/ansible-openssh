@@ -25,8 +25,7 @@ Example Playbook
 
 TODO
 ----------------
-* Add moduli cleanup/regeneration.
-* Add allowed users/groups by AllowUsers or AllowGroup 
+* Add allowed users/groups by AllowUsers or AllowGroups 
 
 License
 -------
