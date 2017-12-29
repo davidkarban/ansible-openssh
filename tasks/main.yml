@@ -25,3 +25,30 @@
     backup: yes
   notify: reload ssh
 
+# moduli modification
+- name: Filter moduli file if not filtered yet
+  shell:
+    awk '$5 > 2000' /etc/ssh/moduli > "/etc/ssh/moduli.safe"
+  args:
+    creates: "/etc/ssh/moduli.modified"
+
+- name: Check if resulting moduli is not empty
+  stat:
+    path: "/etc/ssh/moduli.safe"
+  register: stat
+
+- name: Install new moduli if it has significant size
+  shell:
+    mv /etc/ssh/moduli.safe /etc/ssh/moduli
+  args:
+    creates: "/etc/ssh/moduli.modified"
+  when:
+    - stat.stat.exists
+    - stat.stat.size|int > 1024
+  notify: reload ssh
+
+- name: Ensure moduli will not be touched next time
+  file:
+    path: "/etc/ssh/moduli.modified"
+    state: touch
+  changed_when: false
