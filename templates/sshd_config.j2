@@ -180,7 +180,7 @@ AcceptEnv XMODIFIERS
 # Log sftp level file access (read/write/etc.) that would not be easily logged otherwise.
 Subsystem      sftp    {{ __openssh_sftp_path }} -f AUTHPRIV -l INFO
 
-{% if openssh_version|float >= 6.7 % and openssh_version|float < 7.5 %}
+{% if openssh_version|float >= 6.7 and openssh_version|float < 7.5 %}
 # Use kernel sandbox mechanisms where possible in unprivileged processes
 # Systrace on OpenBSD, Seccomp on Linux, seatbelt on MacOSX/Darwin, rlimit elsewhere.
 UsePrivilegeSeparation sandbox
