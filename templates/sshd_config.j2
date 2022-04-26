@@ -8,10 +8,8 @@
 # possible, but leave them commented.  Uncommented options override the
 # default value.
 
-# If you want to change the port on a SELinux system, you have to tell
-# SELinux about this change.
-# semanage port -a -t ssh_port_t -p tcp #PORTNUMBER
-#
+Include /etc/ssh/sshd_config.d/*.conf
+
 Port {{ openssh_port }}
 #AddressFamily any
 {% if openssh_listen_addresses %}{% for address in openssh_listen_addresses %}
@@ -76,7 +74,6 @@ RequiredAuthentications2 publickey
 #RekeyLimit default none
 
 # Logging
-#SyslogFacility AUTH
 SyslogFacility AUTHPRIV
 
 # LogLevel VERBOSE logs user's key fingerprint on login. Needed to have a clear audit track of which key was using to log in.
@@ -85,7 +82,8 @@ LogLevel VERBOSE
 # Authentication:
 
 #LoginGraceTime 2m
-PermitRootLogin without-password
+PermitRootLogin {% if openssh_version|float < 7.0%}without-password{% else %}prohibit-password
+{% endif %}
 #StrictModes yes
 #MaxAuthTries 6
 #MaxSessions 10
@@ -113,8 +111,8 @@ AuthorizedKeysFile     .ssh/authorized_keys
 PasswordAuthentication no
 #PermitEmptyPasswords no
 
-# Change to no to disable s/key passwords
-#ChallengeResponseAuthentication yes
+# Change to yes to enable challenge-response passwords (beware issues with
+# some PAM modules and threads)
 ChallengeResponseAuthentication no
 
 # Kerberos options
@@ -125,8 +123,8 @@ ChallengeResponseAuthentication no
 #KerberosUseKuserok yes
 
 # GSSAPI options
-GSSAPIAuthentication yes
-GSSAPICleanupCredentials no
+#GSSAPIAuthentication no
+#GSSAPICleanupCredentials yes
 #GSSAPIStrictAcceptorCheck yes
 #GSSAPIKeyExchange no
 #GSSAPIEnablek5users no
@@ -151,7 +149,7 @@ X11Forwarding no
 #X11DisplayOffset 10
 #X11UseLocalhost yes
 #PermitTTY yes
-#PrintMotd yes
+PrintMotd no
 #PrintLastLog yes
 #TCPKeepAlive yes
 #UseLogin no
@@ -171,11 +169,8 @@ X11Forwarding no
 # no default banner path
 #Banner none
 
-# Accept locale-related environment variables
-AcceptEnv LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES
-AcceptEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT
-AcceptEnv LC_IDENTIFICATION LC_ALL LANGUAGE
-AcceptEnv XMODIFIERS
+# Allow client to pass locale environment variables
+AcceptEnv LANG LC_*
 
 # Log sftp level file access (read/write/etc.) that would not be easily logged otherwise.
 Subsystem      sftp    {{ __openssh_sftp_path }} -f AUTHPRIV -l INFO
