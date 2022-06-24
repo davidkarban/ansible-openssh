@@ -17,6 +17,13 @@
     openssh_version: "{{ openssh_version_r.stdout|float }}"
   changed_when: false
 
+- name: Create a 'sshd_config.d' directory if it does not exist
+  file:
+    path: /etc/ssh/sshd_config.d
+    state: directory
+    mode: '0644'
+  when: openssh_version|float >= 7.3
+
 - name: Load ssh configuration
   template:
     src: sshd_config.j2
