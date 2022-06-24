@@ -9,7 +9,10 @@
 # default value.
 
 {% if openssh_version|float >= 7.3 %}
-Include /etc/ssh/sshd_config.d/*.conf
+#Include /etc/ssh/sshd_config.d/*.conf
+# TODO:
+# IN - OpenSSH_7.6p1 -> Bad configuration option: Include
+#https://superuser.com/questions/247564/is-there-a-way-for-one-ssh-config-file-to-include-another-one
 {% endif %}
 
 Port {{ openssh_port }}
